@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import './App.css';
-import { generateEmail as apiGenerateEmail, fetchInbox, simulateEmail as apiSimulateEmail } from './services/api';
+"use client";
+import React, { useState, useEffect } from "react";
+import "./App.css";
+import { generateEmail as apiGenerateEmail, fetchInbox, simulateEmail as apiSimulateEmail } from "../services/api";
+import Link from "next/link";
 
-function App() {
-  const [email, setEmail] = useState('');
-  const [emails, setEmails] = useState([]);
+export default function Home() {
+  const [email, setEmail] = useState("");
+  const [emails, setEmails] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [simMailLoading, setSimMailLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedMail, setSelectedMail] = useState(null);
+  const [selectedMail, setSelectedMail] = useState<any>(null);
 
   // Generate a new temp email from backend
   const generateEmail = async () => {
@@ -19,7 +20,7 @@ function App() {
       setEmail(data.email);
       setEmails([]);
     } catch (err) {
-      alert('Failed to generate email.');
+      alert("Failed to generate email.");
     }
     setLoading(false);
   };
@@ -30,7 +31,6 @@ function App() {
     setLoading(true);
     try {
       const data = await fetchInbox(email);
-      // Only update if emails have changed (length or last email)
       const newEmails = data.emails || [];
       if (
         newEmails.length !== emails.length ||
@@ -39,7 +39,7 @@ function App() {
         setEmails(newEmails);
       }
     } catch (err) {
-      alert('Failed to fetch emails.');
+      alert("Failed to fetch emails.");
     }
     setLoading(false);
   };
@@ -52,7 +52,7 @@ function App() {
       await apiSimulateEmail(email);
       await refreshEmails();
     } catch (err) {
-      alert('Failed to simulate email.');
+      alert("Failed to simulate email.");
     }
     setSimMailLoading(false);
   };
@@ -60,6 +60,7 @@ function App() {
   // Generate email on first load
   useEffect(() => {
     generateEmail();
+    // eslint-disable-next-line
   }, []);
 
   // Poll for new emails every 5 seconds
@@ -69,6 +70,7 @@ function App() {
       refreshEmails();
     }, 5000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line
   }, [email]);
 
   // Copy email to clipboard
@@ -79,7 +81,7 @@ function App() {
   };
 
   // Modal open handler
-  const openModal = (mail) => {
+  const openModal = (mail: any) => {
     setSelectedMail(mail);
     setModalOpen(true);
   };
@@ -96,12 +98,12 @@ function App() {
           <span className="logo-icon">📧</span>
           <span className="logo-text">MoMail.in</span>
         </div>
-        <nav className="momail-nav">
-          <a href="#">Home</a>
-          <a href="#">Blog</a>
-          <a href="#">Status</a>
-          <a href="#">Contact</a>
-        </nav>
+        <div>
+          <nav className="momail-nav">
+            <Link href="/">Home</Link>
+            <Link href="/blog">Blog</Link>
+          </nav>
+        </div>
       </header>
 
       {/* Email Card */}
@@ -113,7 +115,9 @@ function App() {
         <div className="email-card-actions">
           <button className="email-action-btn" onClick={generateEmail} disabled={loading}>Change</button>
           <button className="email-action-btn" onClick={copyEmail} disabled={!email}>Copy</button>
-          <button className="email-action-btn" onClick={simulateEmail} disabled={!email || simMailLoading}>{simMailLoading ? 'Simulating...' : 'Simulate Email'}</button>
+          {process.env.NEXT_PUBLIC_ENABLE_SIMULATE === 'true' && (
+            <button className="email-action-btn" onClick={simulateEmail} disabled={!email || simMailLoading}>{simMailLoading ? 'Simulating...' : 'Simulate Email'}</button>
+          )}
         </div>
         <div className="email-card-inbox">
           <div className="inbox-icon">📥</div>
@@ -238,7 +242,3 @@ function App() {
     </div>
   );
 }
-
-App.propTypes = {};
-
-export default App;

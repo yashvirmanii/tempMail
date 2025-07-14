@@ -28,17 +28,24 @@ app.get('/api/inbox/:email', (req, res) => {
     res.json({ emails: mailbox.emails });
 });
 
-app.post('/api/inbox/:email', (req, res) => {
-    const email = req.params.email;
-    const { subject, from, body } = req.body;
-    if (!mailboxes[email]) return res.status(404).json({ error: 'Mailbox not found or expired' });
-    if (Date.now() - mailboxes[email].createdAt > config.EMAIL_LIFESPAN_MS) {
-        delete mailboxes[email];
-        return res.status(410).json({ error: 'Mailbox expired' });
-    }
-    mailboxes[email].emails.push({ subject, from, body });
-    res.json({ success: true });
-});
+// Only allow simulate email endpoint in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+    app.post('/api/inbox/:email', (req, res) => {
+        const email = req.params.email;
+        const { subject, from, body } = req.body;
+        if (!mailboxes[email]) return res.status(404).json({ error: 'Mailbox not found or expired' });
+        if (Date.now() - mailboxes[email].createdAt > config.EMAIL_LIFESPAN_MS) {
+            delete mailboxes[email];
+            return res.status(410).json({ error: 'Mailbox expired' });
+        }
+        mailboxes[email].emails.push({ subject, from, body });
+        res.json({ success: true });
+    });
+} else {
+    app.post('/api/inbox/:email', (req, res) => {
+        res.status(403).json({ error: 'Simulate email endpoint is disabled in production.' });
+    });
+}
 
 // Periodic cleanup of expired mailboxes
 setInterval(() => {
